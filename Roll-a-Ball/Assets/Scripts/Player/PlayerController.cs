@@ -8,8 +8,10 @@ using System;
 public class PlayerController : MonoBehaviour
 {
     public GameController gameController;
+    //public ParticleSystem particleSystem;
     public float speed;
     private Rigidbody rb;
+    public ParticleSystem particleSystem;   // This is used for the ending animation on game complete
 
     Scene currentScene;
     Scene nextScene;
@@ -21,7 +23,13 @@ public class PlayerController : MonoBehaviour
     public bool Ability_Jump;
     public float jumpHeight;
 
+    // Main Ground
     public GameObject MainGround;
+
+    // Constants
+    private const int MaxPickups = 12;
+    private const int MaxPickupsLevel3MainFloor = 8;
+    private const int MaxLevels = 3;
 
 
     /************************************************************/
@@ -30,9 +38,11 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Time.timeScale = 1;
         rb = GetComponent<Rigidbody>();
         count = 0;
-
+        if (count == 0)
+            EndingPole.ep.endingSound = false;
         Ability_Jump = false;
 
         currentScene = SceneManager.GetActiveScene();
@@ -57,21 +67,35 @@ public class PlayerController : MonoBehaviour
         rb.AddForce(movement * speed);
     }
 
+
+    /************************************************************/
+    /*                      Collision                           */
+    /************************************************************/
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log(other);
         if (other.gameObject.CompareTag("Pick Up"))
         {
             other.gameObject.SetActive(false);
             count += 1;
             gameController.UpdatePickupCounter();
             CheckDeleteFloor();
+            if (count == MaxPickups)
+            {
+                EndingPole.ep.endingSound = true;
+            }
         }
         else if (other.gameObject.CompareTag("Tree"))
         {
-            if (count >= 12)
+            if (count >= MaxPickups)
             {
-                if (SceneManager.GetActiveScene().buildIndex != 3)
+                if (currentScene.name == "level 3")
+                {
+                    // Make ball go poof
+                    particleSystem.Play();
+                    gameController.EndGame();
+                    gameObject.SetActive(false);
+                }
+                else if (SceneManager.GetActiveScene().buildIndex != MaxLevels)
                     SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
                 else
                     SceneManager.LoadScene(0);
@@ -133,7 +157,7 @@ public class PlayerController : MonoBehaviour
     /***********************************/
     private void CheckDeleteFloor()
     {
-        if ((count >= 8) && (currentScene.name == "level 3"))
+        if ((count >= MaxPickupsLevel3MainFloor) && (currentScene.name == "level 3"))
         {
             MainGround.gameObject.SetActive(false);
         }

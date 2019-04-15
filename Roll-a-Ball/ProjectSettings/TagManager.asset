@@ -12,6 +12,7 @@ TagManager:
   - LEVEL 1
   - LEVEL 2
   - LEVEL 3
+  - Music
   layers:
   - Default
   - TransparentFX
